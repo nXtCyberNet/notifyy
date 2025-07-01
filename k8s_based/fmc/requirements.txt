@@ -1,0 +1,4 @@
+asyncpg
+confluent-kafka
+firebase-admin
+prometheus-client

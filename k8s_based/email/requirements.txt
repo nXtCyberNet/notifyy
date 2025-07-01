@@ -1,0 +1,6 @@
+asyncio
+confluent_kafka
+asyncpg
+aiosmtplib
+prometheus_client
+flask

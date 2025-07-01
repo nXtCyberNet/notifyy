@@ -1,0 +1,4 @@
+flask
+flask-cors
+asyncpg
+confluent-kafka

@@ -1,0 +1,4 @@
+asyncpg
+confluent_kafka
+twilio
+prometheus_client
