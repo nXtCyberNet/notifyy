@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'router'
+    static_configs:
+      - targets: ['router:8000']
+
+  - job_name: 'email-service'
+    static_configs:
+      - targets: ['email:8001']
+
+  - job_name: 'whatsapp-service'
+    static_configs:
+      - targets: ['whatsapp:8002']
+
+  - job_name: 'fcm-service'
+    static_configs:
+      - targets: ['fcm:8003']
+
+  - job_name: 'test-service'
+    static_configs:
+      - targets: ['test:8004']
+
+  - job_name: 'producer-service'
+    static_configs:
+      - targets: ['producer:8005']

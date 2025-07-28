@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # Kafka infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Event Router Service
+  router:
+    build:
+      context: .
+      dockerfile: Dockerfile.router
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_SERVERS: kafka:9092
+      EMAIL_SERVICE_URL: http://email:5001/send-email
+      WHATSAPP_SERVICE_URL: http://whatsapp:5002/send-whatsapp
+      FCM_SERVICE_URL: http://fcm:5003/send-notification
+      TEST_SERVICE_URL: http://test:5004/test
+    ports:
+      - "8000:8000"  # Prometheus metrics
+
+  # Email Service
+  email:
+    build:
+      context: ./email
+      dockerfile: Dockerfile
+    environment:
+      SENDER_EMAIL: ${SENDER_EMAIL}
+      APP_PASSWORD: ${APP_PASSWORD}
+    ports:
+      - "5001:5001"
+      - "8001:8001"  # Prometheus metrics
+
+  # WhatsApp Service
+  whatsapp:
+    build:
+      context: ./whatsapp
+      dockerfile: Dockerfile
+    environment:
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER}
+    ports:
+      - "5002:5002"
+      - "8002:8002"  # Prometheus metrics
+
+  # FCM Service
+  fcm:
+    build:
+      context: ./fcm
+      dockerfile: Dockerfile
+    environment:
+      FIREBASE_SERVICE_ACCOUNT_PATH: /app/credentials.json
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+    ports:
+      - "5003:5003"
+      - "8003:8003"  # Prometheus metrics
+
+  # Test Service
+  test:
+    build:
+      context: ./test
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5004"
+      - "8004:8004"  # Prometheus metrics
+
+  # Producer Service
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_SERVERS: kafka:9092
+      KAFKA_TOPIC: notification-events
+    ports:
+      - "5005:5005"
+      - "8005:8005"  # Prometheus metrics
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+volumes:
+  postgres_data:
