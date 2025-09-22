@@ -1,9 +1,9 @@
 from confluent_kafka import Producer
 import random 
 
-
+# Kafka configuration
 conf = {
-    'bootstrap.servers': 'localhost:9092'  
+    'bootstrap.servers': 'localhost:9092'  # Update if needed
 }
 
 # Create producer instance
