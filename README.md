@@ -69,6 +69,3 @@ curl -X POST "http://<producer-service>:5000/send-kafka" \
 - Metrics exported to Prometheus
 
 ---
-
-**License:** MIT © 2025 nXtCyberNet
-
